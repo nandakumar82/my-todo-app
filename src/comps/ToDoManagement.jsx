@@ -2,21 +2,39 @@ import React from 'react';
 import Header from 'comps/Header.jsx';
 import Add from "comps/Add.jsx";
 import ToDoList from "comps/ToDoList.jsx";
+import axios from 'axios';
+
 
 export default class ToDoManagement extends React.Component {
 
     constructor() {
         super();
         this.state = {
-            todos: [
-                {title: 'PayBills', status: 'OPEN'},
-                {title: 'clean room', status: 'COMPLETE'},
-                {title: 'do laundry', status: 'OPEN'},
-                {title: 'do laundry  1', status: 'OPEN'}
-
-            ],
+            todos: [],
             selectedToDo: {}
         };
+
+        /*todos: [
+         {title: 'PayBills', status: 'PENDING'},
+         {title: 'clean room', status: 'COMPLETE'},
+         {title: 'do laundry', status: 'PENDING'},
+         {title: 'cooking meals', status: 'PENDING'}
+         ]*/
+        this.apiUrl = 'http://localhost:8080/api/todos';
+
+    }
+
+    /* apiUrl(){
+     return 'http://localhost:8080/api/todos';
+     }*/
+
+    componentDidMount() {
+        // Make HTTP reques with Axios
+        axios.get(this.apiUrl)
+            .then((res) => {
+                // Set state with result
+                this.setState({todos: res.data});
+            });
     }
 
     /*
@@ -82,29 +100,35 @@ export default class ToDoManagement extends React.Component {
 
     handleToDoRemove(i) {
         console.log(i);
-        let todos = this.state.todos;
-        todos.splice(i, 1);
-        let selectedToDo;
-        if (todos.length > 0) {
-            selectedToDo = todos[0];
+        let idToBeDeleted = this.state.todos[i].id;
 
-        } else {
-            selectedToDo = {};
-        }
+        // Filter all todos except the one to be removed
+        const remainder = this.state.todos.filter((todo) => {
+            if (todo.id !== idToBeDeleted) return todo;
+        });
 
-        this.setState({todos, selectedToDo});// this.setState({companies:companies,selectedCompany:selectedCompany});
+        // Update state with filter
+        axios.delete(this.apiUrl + '/' + idToBeDeleted)
+            .then((res) => {
+                this.setState({todos: remainder});
+            })
+
+
     }
 
     handleAdd(title) {
-        let newTitle = {title: title, status: 'OPEN'};
-        let toDos = this.state.todos;
-        toDos.push(newTitle);
-        this.setState({toDos});
+        const todo = {title: title, status: "PENDING"};
+        // Update data
+        axios.post(this.apiUrl, todo)
+            .then((res) => {
+                this.state.todos.push(res.data);
+                this.setState(this.state.todos);
+            });
     }
 
     render() {
         return (
-            <div className="header">
+            <div>
                 <Header title="My ToDo Console"/>
                 <Add onAdd={this.handleAdd.bind(this)}/>
                 <br/>
